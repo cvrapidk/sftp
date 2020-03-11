@@ -8,15 +8,15 @@ $ make
 
 ## Usage
 
-Parameter | Description
-- | -
-server | FQDN to the remote server
-username | Username
-password | Password
-remote-file | Full path to remote file
-output-file | Full path to output file (download)
-input-file | Full path to input file (upload)
-port | Remote server port
+| Parameter | Description |
+| --------- | ----------- |
+| server | FQDN to the remote server |
+| username | Username |
+| password | Password |
+| remote-file | Full path to remote file |
+| output-file | Full path to output file (download) |
+| input-file | Full path to input file (upload) |
+| port | Remote server port |
 
 ### Download
 
