@@ -13,7 +13,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"math/rand"
 )
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func main() {
 	var server string
@@ -45,7 +48,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if password == "" {
+	if password == "" && privateKey == "" {
 		fmt.Printf("Missing flag: password\n")
 		os.Exit(1)
 	}
@@ -60,8 +63,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println(password)
-
 	// Get host public key
 	hostKey := getHostKey(server)
 
@@ -75,7 +76,13 @@ func main() {
 	}
 
 	// Set auth
-	auths := []ssh.AuthMethod{ssh.Password(password)}
+	auths := []ssh.AuthMethod{ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) ([]string, error) {
+		answers := make([]string, len(questions))
+		for i, _ := range answers {
+			answers[i] = password
+		}
+		return answers, nil
+	})}
 
 	if privateKey != "" {
 		// Get file
@@ -106,8 +113,6 @@ func main() {
 
 	// Combine server and port
 	endpoint := fmt.Sprintf("%s:%d", server, port)
-
-	fmt.Println(endpoint)
 
 	// Connect
 	connection, err := ssh.Dial("tcp", endpoint, config)
@@ -142,16 +147,21 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("%d bytes downloaded\n", bytes)
 
 		// Flush in-memory copy
 		err = dstFile.Sync()
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		// Tell the world
+		fmt.Printf("%d bytes downloaded\n", bytes)
 	} else if inputFile != "" {
+		// Create a temporary filename
+		uploadRemoteFile := fmt.Sprintf("%s.temp.%s", remoteFile, RandStringBytes(8))
+
 		// Create destination file
-		dstFile, err := client.Create(remoteFile)
+		dstFile, err := client.Create(uploadRemoteFile)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -167,6 +177,14 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		// Rename temporary to input filename
+		err = client.PosixRename(uploadRemoteFile, remoteFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Tell the world
 		fmt.Printf("%d bytes uploaded\n", bytes)
 	}
 }
@@ -206,4 +224,12 @@ func getHostKey(host string) ssh.PublicKey {
 	}
 
 	return hostKey
+}
+
+func RandStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }
