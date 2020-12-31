@@ -9,11 +9,11 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"math/rand"
 )
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -26,6 +26,7 @@ func main() {
 	var remoteFile string
 	var inputFile string
 	var outputFile string
+	var overwriteFile bool
 	var port int
 
 	flag.StringVar(&server, "server", "", "Set server")
@@ -35,6 +36,7 @@ func main() {
 	flag.StringVar(&remoteFile, "remote-file", "", "Set remote file")
 	flag.StringVar(&outputFile, "output-file", "", "Set output file")
 	flag.StringVar(&inputFile, "input-file", "", "Set input file")
+	flag.BoolVar(&overwriteFile, "overwrite-file", false, "Overwrite file")
 	flag.IntVar(&port, "port", 22, "Set SSH port")
 	flag.Parse()
 
@@ -130,8 +132,11 @@ func main() {
 
 	// Copy source file to destination file
 	if outputFile != "" {
+		// Create a temporary filename
+		downloadOutputFile := fmt.Sprintf("%s.temp.%s", outputFile, RandStringBytes(8))
+
 		// Create destination file
-		dstFile, err := os.Create(outputFile)
+		dstFile, err := os.Create(downloadOutputFile)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -152,6 +157,21 @@ func main() {
 		err = dstFile.Sync()
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		// Check if we should overwrite
+		if overwriteFile == true {
+			// Rename temporary to download filename
+			err = os.Rename(downloadOutputFile, outputFile)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			// Rename temporary to download filename
+			err = renameAndCheck(downloadOutputFile, outputFile)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 
 		// Tell the world
@@ -178,10 +198,19 @@ func main() {
 			log.Fatal(err)
 		}
 
-		// Rename temporary to input filename
-		err = client.PosixRename(uploadRemoteFile, remoteFile)
-		if err != nil {
-			log.Fatal(err)
+		// Check if we should overwrite
+		if overwriteFile == true {
+			// Rename temporary to input filename
+			err = client.PosixRename(uploadRemoteFile, remoteFile)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			// Rename temporary to input filename
+			err = client.Rename(uploadRemoteFile, remoteFile)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 
 		// Tell the world
@@ -232,4 +261,13 @@ func RandStringBytes(n int) string {
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
 	}
 	return string(b)
+}
+
+func renameAndCheck(src, dst string) error {
+	err := os.Link(src, dst)
+	if err != nil {
+		return err
+	}
+
+	return os.Remove(src)
 }
