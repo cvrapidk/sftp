@@ -294,10 +294,6 @@ func getHostKey(host string) ssh.PublicKey {
 		}
 	}
 
-	if hostKey == nil {
-		log.Fatalf("no hostkey found for %s", host)
-	}
-
 	return hostKey
 }
 
