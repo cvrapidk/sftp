@@ -1,4 +1,4 @@
-# sftpgrab
+# sftp
 
 This tool can download and upload files to a remote SFTP server.
 
@@ -20,9 +20,9 @@ $ make
 
 ### Download
 
-$ sftpgrab --server example.com --username test --password test --remote-file remotefile.csv --output-file remotefile.csv
+$ sftp --server example.com --username test --password test --remote-file remotefile.csv --output-file remotefile.csv
 
 ### Upload
 
-$ sftpgrab --server example.com --username test --password test --remote-file remotefile.csv --input-file remotefile.csv
+$ sftp --server example.com --username test --password test --remote-file remotefile.csv --input-file remotefile.csv
 
