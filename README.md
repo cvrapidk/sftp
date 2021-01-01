@@ -16,6 +16,7 @@ $ make
 | remote-file | Full path to remote file |
 | output-file | Full path to output file (download) |
 | input-file | Full path to input file (upload) |
+| overwrite-file | Overwrite file |
 | port | Remote server port |
 
 ### Download
@@ -25,4 +26,3 @@ $ sftp --server example.com --username test --password test --remote-file remote
 ### Upload
 
 $ sftp --server example.com --username test --password test --remote-file remotefile.csv --input-file remotefile.csv
-
