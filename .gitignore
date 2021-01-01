@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-sftpgrab-*-amd64
+sftp-*-amd64
 
 # Test binary, built with `go test -c`
 *.test
