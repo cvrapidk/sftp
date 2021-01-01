@@ -57,6 +57,11 @@ func main() {
 		}
 	}
 
+	if server == "" {
+		fmt.Printf("Missing flag: server\n")
+		os.Exit(1)
+	}
+
 	if configFile != "" {
 		// Open file
 		f, _ := os.Open(configFile)
@@ -84,11 +89,6 @@ func main() {
 		if portFromConfig != "" {
 			port, _ = strconv.Atoi(portFromConfig)
 		}
-	}
-
-	if server == "" {
-		fmt.Printf("Missing flag: server\n")
-		os.Exit(1)
 	}
 
 	if username == "" {
