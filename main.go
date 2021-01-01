@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"github.com/kevinburke/ssh_config"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -22,7 +24,8 @@ func main() {
 	var server string
 	var username string
 	var password string
-	var privateKey string
+	var identityFile string
+	var configFile string
 	var remoteFile string
 	var inputFile string
 	var outputFile string
@@ -32,13 +35,56 @@ func main() {
 	flag.StringVar(&server, "server", "", "Set server")
 	flag.StringVar(&username, "username", "", "Set username")
 	flag.StringVar(&password, "password", "", "Set password")
-	flag.StringVar(&privateKey, "private-key", "", "Set path to SSH private key")
+	flag.StringVar(&identityFile, "i", "", "Set path to SSH private key")
+	flag.StringVar(&configFile, "F", "", "Set path to SSH config")
 	flag.StringVar(&remoteFile, "remote-file", "", "Set remote file")
 	flag.StringVar(&outputFile, "output-file", "", "Set output file")
 	flag.StringVar(&inputFile, "input-file", "", "Set input file")
 	flag.BoolVar(&overwriteFile, "overwrite-file", false, "Overwrite file")
 	flag.IntVar(&port, "port", 22, "Set SSH port")
 	flag.Parse()
+
+	// Loop over arguments
+	for _, arg := range os.Args[1:] {
+		// Parse
+		at := strings.LastIndex(arg, "@")
+		if at >= 0 {
+			// Set username and server
+			username, server = arg[:at], arg[at+1:]
+
+			// We are done here
+			break
+		}
+	}
+
+	if configFile != "" {
+		// Open file
+		f, _ := os.Open(configFile)
+
+		// Decode config
+		cfg, _ := ssh_config.Decode(f)
+
+		// Set variables
+		usernameFromConfig, _ := cfg.Get(server, "Username")
+		if usernameFromConfig != "" {
+			username = usernameFromConfig
+		}
+
+		passwordFromConfig, _ := cfg.Get(server, "Password")
+		if passwordFromConfig != "" {
+			password = passwordFromConfig
+		}
+
+		identityFileFromConfig, _ := cfg.Get(server, "IdentityFile")
+		if identityFileFromConfig != "" {
+			identityFile = identityFileFromConfig
+		}
+
+		portFromConfig, _ := cfg.Get(server, "Port")
+		if portFromConfig != "" {
+			port, _ = strconv.Atoi(portFromConfig)
+		}
+	}
 
 	if server == "" {
 		fmt.Printf("Missing flag: server\n")
@@ -50,7 +96,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if password == "" && privateKey == "" {
+	if password == "" && identityFile == "" {
 		fmt.Printf("Missing flag: password\n")
 		os.Exit(1)
 	}
@@ -86,9 +132,9 @@ func main() {
 		return answers, nil
 	})}
 
-	if privateKey != "" {
+	if identityFile != "" {
 		// Get file
-		key, err := ioutil.ReadFile(privateKey)
+		key, err := ioutil.ReadFile(identityFile)
 		if err != nil {
 			log.Fatalf("Unable to read private key: %v", err)
 			os.Exit(1)
