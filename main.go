@@ -176,7 +176,7 @@ func main() {
 	}
 	defer client.Close()
 
-	// Copy source file to destination file
+	// Download file
 	if outputFile != "" {
 		// Create a temporary filename
 		downloadOutputFile := fmt.Sprintf("%s.temp.%s", outputFile, RandStringBytes(8))
@@ -222,7 +222,7 @@ func main() {
 
 		// Tell the world
 		fmt.Printf("%d bytes downloaded\n", bytes)
-	} else if inputFile != "" {
+	} else if inputFile != "" { // Upload file
 		// Create a temporary filename
 		uploadRemoteFile := fmt.Sprintf("%s.temp.%s", remoteFile, RandStringBytes(8))
 
