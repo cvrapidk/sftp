@@ -111,6 +111,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	if inputFile != "" {
+		_, err := os.Stat(inputFile)
+		if os.IsNotExist(err) {
+			log.Fatalf("Input file does not exists: %v", err)
+		} else if err != nil {
+			log.Fatalf("Some unknown error has happended when reading input file: %v", err)
+		}
+	}
+
 	// Get host public key
 	hostKey := getHostKey(server)
 
